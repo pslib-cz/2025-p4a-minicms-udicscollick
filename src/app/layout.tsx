@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Newsreader, Space_Grotesk } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/tiptap/styles.css";
 import "./globals.css";
+import { CookieConsent } from "@/components/cookie-consent";
 import { Providers } from "@/components/providers";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 
@@ -47,7 +47,7 @@ export default function RootLayout({
     <html lang="cs" className={`${spaceGrotesk.variable} ${newsreader.variable}`}>
       <body>
         <Providers>{children}</Providers>
-        <Analytics />
+        <CookieConsent />
       </body>
     </html>
   );
