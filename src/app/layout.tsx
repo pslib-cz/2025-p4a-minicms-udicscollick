@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Newsreader, Space_Grotesk } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/tiptap/styles.css";
@@ -46,6 +47,7 @@ export default function RootLayout({
     <html lang="cs" className={`${spaceGrotesk.variable} ${newsreader.variable}`}>
       <body>
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
