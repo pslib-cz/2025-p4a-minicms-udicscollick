@@ -1,0 +1,10 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" rx="48" fill="#F4E9DA"/>
+  <circle cx="927" cy="188" r="122" fill="#E07C47" fill-opacity="0.35"/>
+  <circle cx="235" cy="576" r="168" fill="#1F7267" fill-opacity="0.28"/>
+  <path d="M152 580C280 416 424 396 560 522C692 644 838 642 1024 482" stroke="#193033" stroke-opacity="0.32" stroke-width="24" stroke-linecap="round"/>
+  <path d="M312 284L422 194L520 272L690 132L842 254" stroke="#1F7267" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M702 556C750 488 864 474 914 542" stroke="#E07C47" stroke-width="22" stroke-linecap="round"/>
+  <text x="152" y="164" fill="#193033" font-family="Arial, sans-serif" font-size="72" font-weight="700">Toulky</text>
+  <text x="152" y="232" fill="#4F6366" font-family="Arial, sans-serif" font-size="28">Cover image placeholder for travel article</text>
+</svg>
