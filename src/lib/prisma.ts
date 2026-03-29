@@ -1,4 +1,7 @@
 import { PrismaClient } from "@/generated/prisma";
+import { normalizeDatabaseEnv } from "@/lib/database-env";
+
+normalizeDatabaseEnv();
 
 declare global {
   var prisma: PrismaClient | undefined;

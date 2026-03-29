@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { ArticleStatus } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { isMissingPrismaTableError } from "@/lib/prisma-errors";
 
 export const PUBLIC_PAGE_SIZE = 6;
 export const DASHBOARD_PAGE_SIZE = 8;
@@ -14,39 +15,107 @@ type PublicArticleFilters = {
 
 const getCachedPublicArticles = unstable_cache(
   async ({ page, query, categoryId, tagId }: PublicArticleFilters) => {
-    const where = {
-      status: ArticleStatus.PUBLISHED,
-      publishDate: {
-        lte: new Date(),
-      },
-      ...(query
-        ? {
-            OR: [
-              { title: { contains: query } },
-              { excerpt: { contains: query } },
-              { contentHtml: { contains: query } },
-            ],
-          }
-        : {}),
-      ...(categoryId ? { categoryId } : {}),
-      ...(tagId
-        ? {
-            tags: {
-              some: {
-                tagId,
+    try {
+      const where = {
+        status: ArticleStatus.PUBLISHED,
+        publishDate: {
+          lte: new Date(),
+        },
+        ...(query
+          ? {
+              OR: [
+                { title: { contains: query } },
+                { excerpt: { contains: query } },
+                { contentHtml: { contains: query } },
+              ],
+            }
+          : {}),
+        ...(categoryId ? { categoryId } : {}),
+        ...(tagId
+          ? {
+              tags: {
+                some: {
+                  tagId,
+                },
+              },
+            }
+          : {}),
+      };
+
+      const [items, totalItems] = await Promise.all([
+        prisma.article.findMany({
+          where,
+          include: {
+            author: {
+              select: {
+                name: true,
               },
             },
-          }
-        : {}),
-    };
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            tags: {
+              include: {
+                tag: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            publishDate: "desc",
+          },
+          skip: (page - 1) * PUBLIC_PAGE_SIZE,
+          take: PUBLIC_PAGE_SIZE,
+        }),
+        prisma.article.count({ where }),
+      ]);
 
-    const [items, totalItems] = await Promise.all([
-      prisma.article.findMany({
-        where,
+      return {
+        items,
+        totalItems,
+        totalPages: Math.max(1, Math.ceil(totalItems / PUBLIC_PAGE_SIZE)),
+      };
+    } catch (error) {
+      if (isMissingPrismaTableError(error)) {
+        return {
+          items: [],
+          totalItems: 0,
+          totalPages: 1,
+        };
+      }
+
+      throw error;
+    }
+  },
+  ["public-articles"],
+  {
+    revalidate: 300,
+  },
+);
+
+const getCachedPublishedArticle = unstable_cache(
+  async (slug: string) => {
+    try {
+      return await prisma.article.findFirst({
+        where: {
+          slug,
+          status: ArticleStatus.PUBLISHED,
+          publishDate: {
+            lte: new Date(),
+          },
+        },
         include: {
           author: {
             select: {
               name: true,
+              image: true,
             },
           },
           category: {
@@ -66,62 +135,14 @@ const getCachedPublicArticles = unstable_cache(
             },
           },
         },
-        orderBy: {
-          publishDate: "desc",
-        },
-        skip: (page - 1) * PUBLIC_PAGE_SIZE,
-        take: PUBLIC_PAGE_SIZE,
-      }),
-      prisma.article.count({ where }),
-    ]);
+      });
+    } catch (error) {
+      if (isMissingPrismaTableError(error)) {
+        return null;
+      }
 
-    return {
-      items,
-      totalItems,
-      totalPages: Math.max(1, Math.ceil(totalItems / PUBLIC_PAGE_SIZE)),
-    };
-  },
-  ["public-articles"],
-  {
-    revalidate: 300,
-  },
-);
-
-const getCachedPublishedArticle = unstable_cache(
-  async (slug: string) => {
-    return prisma.article.findFirst({
-      where: {
-        slug,
-        status: ArticleStatus.PUBLISHED,
-        publishDate: {
-          lte: new Date(),
-        },
-      },
-      include: {
-        author: {
-          select: {
-            name: true,
-            image: true,
-          },
-        },
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        tags: {
-          include: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
+      throw error;
+    }
   },
   ["published-article"],
   {
@@ -131,31 +152,12 @@ const getCachedPublishedArticle = unstable_cache(
 
 const getCachedPublicTaxonomy = unstable_cache(
   async () => {
-    const [categories, tags] = await Promise.all([
-      prisma.category.findMany({
-        where: {
-          articles: {
-            some: {
-              status: ArticleStatus.PUBLISHED,
-              publishDate: {
-                lte: new Date(),
-              },
-            },
-          },
-        },
-        orderBy: {
-          name: "asc",
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-      }),
-      prisma.tag.findMany({
-        where: {
-          articles: {
-            some: {
-              article: {
+    try {
+      const [categories, tags] = await Promise.all([
+        prisma.category.findMany({
+          where: {
+            articles: {
+              some: {
                 status: ArticleStatus.PUBLISHED,
                 publishDate: {
                   lte: new Date(),
@@ -163,18 +165,45 @@ const getCachedPublicTaxonomy = unstable_cache(
               },
             },
           },
-        },
-        orderBy: {
-          name: "asc",
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-      }),
-    ]);
+          orderBy: {
+            name: "asc",
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        }),
+        prisma.tag.findMany({
+          where: {
+            articles: {
+              some: {
+                article: {
+                  status: ArticleStatus.PUBLISHED,
+                  publishDate: {
+                    lte: new Date(),
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            name: "asc",
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        }),
+      ]);
 
-    return { categories, tags };
+      return { categories, tags };
+    } catch (error) {
+      if (isMissingPrismaTableError(error)) {
+        return { categories: [], tags: [] };
+      }
+
+      throw error;
+    }
   },
   ["public-taxonomy"],
   {
@@ -195,44 +224,55 @@ export function getPublicTaxonomy() {
 }
 
 export async function getHomePageData() {
-  const featured = await prisma.article.findMany({
-    where: {
-      status: ArticleStatus.PUBLISHED,
-      publishDate: {
-        lte: new Date(),
-      },
-    },
-    include: {
-      author: {
-        select: {
-          name: true,
+  try {
+    const featured = await prisma.article.findMany({
+      where: {
+        status: ArticleStatus.PUBLISHED,
+        publishDate: {
+          lte: new Date(),
         },
       },
-      category: {
-        select: {
-          id: true,
-          name: true,
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
         },
-      },
-      tags: {
-        include: {
-          tag: {
-            select: {
-              id: true,
-              name: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        tags: {
+          include: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+              },
             },
           },
         },
       },
-    },
-    orderBy: {
-      publishDate: "desc",
-    },
-    take: 6,
-  });
+      orderBy: {
+        publishDate: "desc",
+      },
+      take: 6,
+    });
 
-  return {
-    hero: featured[0] ?? null,
-    secondary: featured.slice(1),
-  };
+    return {
+      hero: featured[0] ?? null,
+      secondary: featured.slice(1),
+    };
+  } catch (error) {
+    if (isMissingPrismaTableError(error)) {
+      return {
+        hero: null,
+        secondary: [],
+      };
+    }
+
+    throw error;
+  }
 }

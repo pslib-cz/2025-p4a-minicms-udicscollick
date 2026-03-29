@@ -129,7 +129,9 @@ npm run db:setup
 
 ## Deploy na Vercel
 
-- nastavte `DATABASE_URL` na PostgreSQL
+- pripojte PostgreSQL databazi
+- aplikace umi cist jak `DATABASE_URL`, tak i Vercel Postgres promenne `POSTGRES_PRISMA_URL` a `POSTGRES_URL_NON_POOLING`
+- pokud nepouzivate Vercel Postgres integraci, nastavte `DATABASE_URL` a `DIRECT_URL` rucne
 - nastavte `AUTH_SECRET`
 - nastavte `NEXTAUTH_URL` na produkční URL
 - nastavte `NEXT_PUBLIC_SITE_URL` na produkční URL
