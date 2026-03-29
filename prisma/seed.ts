@@ -16,38 +16,25 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
 
-  const [evaPasswordHash, marekPasswordHash] = await Promise.all([
-    hash("heslo123", 12),
-    hash("heslo123", 12),
-  ]);
+  const passwordHash = await hash("heslo123", 12);
 
-  const eva = await prisma.user.create({
+  const author = await prisma.user.create({
     data: {
       email: "eva@toulky.cz",
       name: "Eva Horáková",
-      passwordHash: evaPasswordHash,
+      passwordHash,
       image:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=320&q=80",
     },
   });
 
-  const marek = await prisma.user.create({
-    data: {
-      email: "marek@toulky.cz",
-      name: "Marek Kříž",
-      passwordHash: marekPasswordHash,
-      image:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=320&q=80",
-    },
-  });
-
-  const evaCategories = await Promise.all([
+  const categories = await Promise.all([
     prisma.category.create({
       data: {
         name: "Víkend v Evropě",
         slug: "vikend-v-evrope",
         description: "Krátké výlety po městech, která stihnete za dva až tři dny.",
-        userId: eva.id,
+        userId: author.id,
       },
     }),
     prisma.category.create({
@@ -55,18 +42,15 @@ async function main() {
         name: "Hory a treky",
         slug: "hory-a-treky",
         description: "Horské trasy, výstupy a vícedenní přechody.",
-        userId: eva.id,
+        userId: author.id,
       },
     }),
-  ]);
-
-  const marekCategories = await Promise.all([
     prisma.category.create({
       data: {
         name: "Roadtrip",
         slug: "roadtrip",
         description: "Dlouhé přesuny autem, itineráře a zastávky po cestě.",
-        userId: marek.id,
+        userId: author.id,
       },
     }),
     prisma.category.create({
@@ -74,26 +58,22 @@ async function main() {
         name: "Kavárny a města",
         slug: "kavarny-a-mesta",
         description: "Pomalejší městské cestování s důrazem na lokální atmosféru.",
-        userId: marek.id,
+        userId: author.id,
       },
     }),
   ]);
 
-  const evaTags = await Promise.all([
-    prisma.tag.create({ data: { name: "vlakem", slug: "vlakem", userId: eva.id } }),
-    prisma.tag.create({ data: { name: "rozpočet", slug: "rozpocet", userId: eva.id } }),
-    prisma.tag.create({ data: { name: "výhledy", slug: "vyhledy", userId: eva.id } }),
-  ]);
-
-  const marekTags = await Promise.all([
-    prisma.tag.create({ data: { name: "roadtrip", slug: "roadtrip", userId: marek.id } }),
-    prisma.tag.create({ data: { name: "kavárny", slug: "kavarny", userId: marek.id } }),
-    prisma.tag.create({ data: { name: "fotospoty", slug: "fotospoty", userId: marek.id } }),
+  const tags = await Promise.all([
+    prisma.tag.create({ data: { name: "vlakem", slug: "vlakem", userId: author.id } }),
+    prisma.tag.create({ data: { name: "rozpočet", slug: "rozpocet", userId: author.id } }),
+    prisma.tag.create({ data: { name: "výhledy", slug: "vyhledy", userId: author.id } }),
+    prisma.tag.create({ data: { name: "roadtrip", slug: "roadtrip", userId: author.id } }),
+    prisma.tag.create({ data: { name: "kavárny", slug: "kavarny", userId: author.id } }),
+    prisma.tag.create({ data: { name: "fotospoty", slug: "fotospoty", userId: author.id } }),
   ]);
 
   const articles = [
     {
-      user: eva,
       title: "48 hodin v Kodani bez auta",
       slug: "48-hodin-v-kodani-bez-auta",
       excerpt:
@@ -104,11 +84,10 @@ async function main() {
         "<p>Kodaň je ideální město na prodloužený víkend. Z letiště se rychle dostanete do centra, většinu míst zvládnete pěšky a díky husté síti vlaků není potřeba řešit auto.</p><p>První den věnujte čtvrtím Nyhavn a Christianshavn, druhý den si nechte na muzeum designu, Torvehallerne a podvečerní procházku kolem jezer.</p><p>V článku najdete i konkrétní tipy na levnější brunch, vyhlídky zdarma a trasu, která dává smysl časově i logisticky.</p>",
       status: ArticleStatus.PUBLISHED,
       publishDate: daysAgo(7),
-      categoryId: evaCategories[0].id,
-      tagIds: [evaTags[0].id, evaTags[1].id],
+      categoryId: categories[0].id,
+      tagIds: [tags[0].id, tags[1].id],
     },
     {
-      user: eva,
       title: "Tatranský víkend pro začátečníky",
       slug: "tatransky-vikend-pro-zacatecniky",
       excerpt:
@@ -119,11 +98,10 @@ async function main() {
         "<p>Pokud chcete ochutnat Vysoké Tatry bez náročné logistiky, vyplatí se ubytovat u železniční zastávky a držet se dvou lehčích tras.</p><p>První den doporučuji Popradské pleso, druhý den Štrbské pleso a nenáročný výstup k vodopádům. Díky tomu stihnete výhledy i návrat domů v neděli večer.</p>",
       status: ArticleStatus.PUBLISHED,
       publishDate: daysAgo(21),
-      categoryId: evaCategories[1].id,
-      tagIds: [evaTags[0].id, evaTags[2].id],
+      categoryId: categories[1].id,
+      tagIds: [tags[0].id, tags[2].id],
     },
     {
-      user: eva,
       title: "Jak si naplánovat podzimní výlet do Alp",
       slug: "jak-si-naplanovat-podzimni-vylet-do-alp",
       excerpt:
@@ -134,11 +112,10 @@ async function main() {
         "<p>Podzim v Alpách je klidnější, ale vyžaduje pečlivější plán. Důležité je sledovat sněhovou hranici, provoz lanovek a otevírací dobu horských chat.</p><p>Tento draft článek slouží jako ukázka neveřejného obsahu v CMS.</p>",
       status: ArticleStatus.DRAFT,
       publishDate: null,
-      categoryId: evaCategories[1].id,
-      tagIds: [evaTags[2].id],
+      categoryId: categories[1].id,
+      tagIds: [tags[2].id],
     },
     {
-      user: marek,
       title: "Pomalý roadtrip po severní Itálii",
       slug: "pomaly-roadtrip-po-severni-italii",
       excerpt:
@@ -149,11 +126,10 @@ async function main() {
         "<p>Severní Itálie funguje skvěle i mimo hlavní sezónu. Pokud si trasu rozložíte mezi Lago di Garda, Bergamo a Veronu, vyhnete se zbytečnému přejezdu a zůstane prostor na spontánní zastávky.</p><p>V textu najdete doporučené úseky, parkování i tip na ubytování na dvě noci v jedné základně.</p>",
       status: ArticleStatus.PUBLISHED,
       publishDate: daysAgo(12),
-      categoryId: marekCategories[0].id,
-      tagIds: [marekTags[0].id, marekTags[2].id],
+      categoryId: categories[2].id,
+      tagIds: [tags[3].id, tags[5].id],
     },
     {
-      user: marek,
       title: "Lisabon: kavárny, výhledy a tramvaje",
       slug: "lisabon-kavarny-vyhledy-a-tramvaje",
       excerpt:
@@ -164,8 +140,8 @@ async function main() {
         "<p>Lisabon je ideální město na tři dny. Stačí si chytře rozdělit Alfamu, Bairro Alto a Belém tak, abyste zbytečně nepřejížděli sem a tam.</p><p>Nejlepší zážitky často nejsou v nejznámějších kavárnách, ale v menších podnicích mimo hlavní proud turistů. V článku je najdete i s konkrétní trasou.</p>",
       status: ArticleStatus.PUBLISHED,
       publishDate: daysAgo(3),
-      categoryId: marekCategories[1].id,
-      tagIds: [marekTags[1].id, marekTags[2].id],
+      categoryId: categories[3].id,
+      tagIds: [tags[4].id, tags[5].id],
     },
   ];
 
@@ -179,7 +155,7 @@ async function main() {
         coverImageUrl: article.coverImageUrl,
         status: article.status,
         publishDate: article.publishDate,
-        authorId: article.user.id,
+        authorId: author.id,
         categoryId: article.categoryId,
       },
     });
@@ -193,9 +169,8 @@ async function main() {
   }
 
   console.log("Seed completed.");
-  console.log("Demo účty:");
+  console.log("Prihlasovaci ucet:");
   console.log("eva@toulky.cz / heslo123");
-  console.log("marek@toulky.cz / heslo123");
 }
 
 main()

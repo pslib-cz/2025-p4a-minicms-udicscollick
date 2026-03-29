@@ -25,6 +25,8 @@ export async function generateMetadata({ params }: ArticleDetailPageProps): Prom
     };
   }
 
+  const publishedTime = article.publishDate ? new Date(article.publishDate).toISOString() : undefined;
+
   return {
     title: article.title,
     description: article.excerpt,
@@ -38,7 +40,7 @@ export async function generateMetadata({ params }: ArticleDetailPageProps): Prom
       siteName: siteConfig.name,
       type: "article",
       authors: [article.author.name],
-      publishedTime: article.publishDate?.toISOString(),
+      publishedTime,
       images: article.coverImageUrl ? [{ url: article.coverImageUrl }] : undefined,
     },
   };

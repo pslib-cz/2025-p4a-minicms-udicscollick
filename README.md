@@ -109,10 +109,9 @@ npm run dev
 
 5. Otevřete `http://localhost:3000`
 
-Demo účty:
+Přihlašovací účet:
 
 - `eva@toulky.cz / heslo123`
-- `marek@toulky.cz / heslo123`
 
 ## Důležité skripty
 
@@ -146,8 +145,8 @@ Repo obsahuje samostatné migrace pro:
 
 Seed vytváří:
 
-- 2 uživatele
-- více kategorií a tagů pro každého uživatele
+- 1 uživatele
+- více kategorií a tagů pro jeden účet
 - mix publikovaných i draft článků
 
 ## Co zůstává po deployi
