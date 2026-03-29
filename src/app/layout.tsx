@@ -25,6 +25,9 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  verification: {
+    google: "65-GDgYBQYRifqKqIdWB5MQO_Zauw4QtUSMtGycdHos",
+  },
   alternates: {
     canonical: absoluteUrl("/"),
   },
